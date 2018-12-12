@@ -1,0 +1,8 @@
+interface {{ interface_label }}
+ ! Interface is in VLAN {{ vlan }}
+ authentication open
+ authentication event server dead action authorize
+ authentication event server alive action reinitialize
+ dot1x pae authenticator
+ authentication port-control auto
+ ! Example config
