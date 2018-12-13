@@ -5,7 +5,7 @@ Usage is available via `python generate_interface_config.py` below.
 
 Requires `napalm` module.
 
-See [#getting-started](getting started for details).
+See [getting started for details](#getting-started).
 
 # Usage
 To run the script interactively, use `pyhton generate_interface_config.py`.
