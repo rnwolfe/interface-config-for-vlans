@@ -10,9 +10,17 @@ See [getting started for details](#getting-started).
 # Usage
 To run the script interactively, use `pyhton generate_interface_config.py`.
 
-Can be run unattended by provide `-v`, `-u`, and `-p`. This will use default input files for `devices` and `template` file.
+Can be run unattended by provide `-v`, `-u`, and `-p`. This will use default input files for `devices` and `template` file. For example: 
 
-If wanting to specify non-default locations for those files, use `-d` and `-t`.
+```
+python generate_interface_config.py -v 100,150 -u admin -p P@ssw0rd
+```
+
+If wanting to specify non-default locations for those files, use `-d` and `-t`. For example:
+
+```
+python generate_interface_config.py -v 100,150 -u admin -p P@ssw0rd -t inputs/template.j2 -d inputs/target_devices
+```
 
 Full help available using `-h` and below:
 ```
