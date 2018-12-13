@@ -10,3 +10,6 @@ __pycache__
 
 # But not requirements.txt
 !requirements.txt
+
+# Thanks, macOS
+.DS_Store
