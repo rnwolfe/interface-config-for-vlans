@@ -36,7 +36,7 @@ python generate_interface_config.py [vlan_list]
 
 For example:
 ```
-python generate_interface_config.py 10.10.100.12 50,51,105,110
+python generate_interface_config.py 50,51,105,110
 ```
 
 Output configuration files will be placed in the project root directory using the `[device].txt` naming format.
