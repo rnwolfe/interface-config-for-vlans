@@ -38,9 +38,8 @@ def main(vlan_list, username, password, target_devices_file, template_file):
 
     # Load jinja template
     print(f'{color.BOLD}Loading configuration template...{color.END}')
-    loader = jinja2.FileSystemLoader('inputs')
+    loader = jinja2.FileSystemLoader('./')
     env = jinja2.Environment(loader=loader)
-    template_file = 'interface_template.j2'
     template = env.get_template(template_file)
 
     # Get credentials for devices, if not provided:
