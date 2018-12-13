@@ -19,12 +19,13 @@ class color:
    END = '\033[0m'
 
 # main
-def main(host, vlan_list, template_file='interface_template.j2'):
+def main(vlan_list, target_devices_file='inputs/target_devices', template_file='interface_template.j2'):
     """Script to generate an interface configuration for any interfaces
     on a device that are a member of a specified list of VLANs. """
-
-    # Prints to terminal in bold, easier readability
-    pretty_hostname = color.BOLD + host + color.END
+    print(target_devices_file)
+    # Open target_devices file
+    fh = open(target_devices_file, 'r')
+    devices = [device.strip() for device in fh.readlines()]
 
     # Parse VLANs to apply to
     vlan_apply_list = [vlan.strip() for vlan in vlan_list.split(',')]
@@ -37,52 +38,61 @@ def main(host, vlan_list, template_file='interface_template.j2'):
     template_file = 'interface_template.j2'
     template = env.get_template(template_file)
 
-    # Get credentials for device:
-    username = input(f"{pretty_hostname}: Enter device username: ")
-    password = getpass.getpass(prompt=f"{pretty_hostname}: Enter device password: ")
+    # Get credentials for devices:
+    username = input(f"Enter username for devices: ")
+    password = getpass.getpass(prompt=f"Enter password for devices: ")
 
+    for device in devices:
+        # Prints to terminal in bold, easier readability
+        pretty_hostname = color.BOLD + device + color.END
+
+        # Get interface VLANs for device
+        print(f'{pretty_hostname}: Getting interface VLANs...')
+        interface_vlans = get_device_interface_vlans(device, username, password)
+
+        # Generate configuration to apply
+        print(f'{pretty_hostname}: Generating config from template for interfaces in target VLANs...')
+
+        output = []
+        for interface, vlan in interface_vlans.items():
+            if vlan != 'trunk' and (vlan in vlan_apply_list):
+                output.append(template.render(interface_label=interface, vlan=vlan))
+
+        config = '\n'.join(output)
+
+        # Write config to file
+        print(f'{pretty_hostname}: Writing config to {device}.txt...')
+        f = open(f"{device}.txt", "w")
+        f.write(config)
+        f.close()
+
+        print(f'{pretty_hostname}: Done!')
+
+    # Merging, commiting, etc. programmatically requires SCP server
+    # enabled and config archiving enabled on device
+
+def get_device_interface_vlans(hostname, username, password):
     # Setup device for napalm
     driver = napalm.get_network_driver('ios')
-    device = driver(hostname=host, username=username, password=password)
+    device = driver(hostname=hostname, username=username, password=password)
 
-    print(f'{pretty_hostname}: Opening device...')
+    # Open device
     device.open()
 
     # Get VLANs
-    print(f'{pretty_hostname}: Getting interface VLANs...')
     interface_vlans = device.get_interface_vlans()
 
     # Close the device
     device.close()
 
-    # Generate configuration to apply
-    print(f'{pretty_hostname}: Generating config from template for interfaces in target VLANs...')
-
-    output = []
-    for interface, vlan in interface_vlans.items():
-        if vlan != 'trunk' and (vlan in vlan_apply_list):
-            output.append(template.render(interface_label=interface, vlan=vlan))
-
-    config = '\n'.join(output)
-
-    # Write config to file
-    print(f'{pretty_hostname}: Writing config to {host}.txt...')
-    f = open(f"{host}.txt", "w")
-    f.write(config)
-    f.close()
-
-    print(f'{pretty_hostname}: Done!')
-
-    # Merging, commiting, etc. programmatically requires SCP server
-    # enabled and config archiving enabled on device
+    return interface_vlans
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 1:
         sys.exit(1)
-        # print('Using default parameters.')
-        # main('10.1.100.1', '92')
+        print('Please provide a list of VLANs to apply to.')
     else:
-        device_list = sys.argv[1]
-        vlan_list = sys.argv[2]
+        vlan_list = sys.argv[1]
+        device_list = None
         template_file = None
-        main(device_list, vlan_list, template_file)
+        main(vlan_list)

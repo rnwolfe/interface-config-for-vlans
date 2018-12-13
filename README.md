@@ -19,10 +19,19 @@ Specify the template to generate the configuration in `inputs/interface_template
 
 This repository provides an *example* configuration.
 
+### Specify devices to run against
+Put one device per line in `inputs/target_devices`.
+
+```
+10.1.100.1
+10.2.100.1
+10.3.100.1
+```
+
 ### Run the script
 To run the script, use:
 ```
-python generate_interface_config.py [device_hostname_or_ip] [vlan_list]
+python generate_interface_config.py [vlan_list]
 ```
 
 For example:
@@ -35,7 +44,7 @@ Output configuration files will be placed in the project root directory using th
 ## Example Output
 **generate_interface_config.py**
 ```
-$ python generate_interface_config.py 10.1.100.1 92
+$ python generate_interface_config.py 92
 Will apply configurations to interfacs in the following VLANs: ['92']
 Loading configuration template...
 10.1.100.1: Enter device username: admin
