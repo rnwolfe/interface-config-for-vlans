@@ -2,6 +2,7 @@ import sys
 import os
 import getpass
 import jinja2
+import argparse
 
 import napalm
 
@@ -19,13 +20,17 @@ class color:
    END = '\033[0m'
 
 # main
-def main(vlan_list, target_devices_file='inputs/target_devices', template_file='interface_template.j2'):
+def main(vlan_list, username, password, target_devices_file, template_file):
     """Script to generate an interface configuration for any interfaces
     on a device that are a member of a specified list of VLANs. """
-    print(target_devices_file)
+
     # Open target_devices file
     fh = open(target_devices_file, 'r')
     devices = [device.strip() for device in fh.readlines()]
+
+    # Get target VLANs, if not provided
+    if not vlan_list:
+        vlan_list = input("Enter VLANs targeted interfaces should be in (comma seperated): ")
 
     # Parse VLANs to apply to
     vlan_apply_list = [vlan.strip() for vlan in vlan_list.split(',')]
@@ -38,9 +43,11 @@ def main(vlan_list, target_devices_file='inputs/target_devices', template_file='
     template_file = 'interface_template.j2'
     template = env.get_template(template_file)
 
-    # Get credentials for devices:
-    username = input(f"Enter username for devices: ")
-    password = getpass.getpass(prompt=f"Enter password for devices: ")
+    # Get credentials for devices, if not provided:
+    if not username:
+        username = input("Enter username for devices: ")
+    if not password:
+        password = getpass.getpass(prompt="Enter password for devices: ")
 
     for device in devices:
         # Prints to terminal in bold, easier readability
@@ -88,11 +95,13 @@ def get_device_interface_vlans(hostname, username, password):
     return interface_vlans
 
 if __name__ == '__main__':
-    if len(sys.argv) < 1:
-        sys.exit(1)
-        print('Please provide a list of VLANs to apply to.')
-    else:
-        vlan_list = sys.argv[1]
-        device_list = None
-        template_file = None
-        main(vlan_list)
+    parser = argparse.ArgumentParser(description='Generate configuration templates per interface in specified VLANs.', formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('-v', '--vlans', type=str, help='vlan membership of target interfaces (list: 5, 6, 7, 20).\nFor non-interactive use. Will be prompted if not specified.')
+    parser.add_argument('-u', '--username', type=str, help='username to login with (applies to all devices).\nFor non-interactive use. Will be prompted if not specified.')
+    parser.add_argument('-p', '--password', type=str, help='password to login with (applies to all devices).\nFor non-interactive use. Will be prompted if not specified.')
+    parser.add_argument('-d', '--devices', type=str, default='inputs/target_devices', help='target device list (file)\ndefault: inputs/target_devices')
+    parser.add_argument('-t', '--template', type=str, default='inputs/template.j2', help='template to generate configs (file)\ndefault: inputs/template.j2')
+    args = parser.parse_args()
+
+    main(vlan_list=args.vlans, username=args.username, password=args.password, target_devices_file=args.devices, template_file=args.template)
+
