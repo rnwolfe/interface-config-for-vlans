@@ -34,7 +34,7 @@ def main(vlan_list, username, password, target_devices_file, template_file):
 
     # Parse VLANs to apply to
     vlan_apply_list = [vlan.strip() for vlan in vlan_list.split(',')]
-    print(f'{color.BOLD}Will apply configurations to interfacs in the following VLANs{color.END}: {str(vlan_apply_list)}')
+    print(f'{color.BOLD}Will apply configurations to interfaces in the following VLANs{color.END}: {str(vlan_apply_list)}')
 
     # Load jinja template
     print(f'{color.BOLD}Loading configuration template...{color.END}')
@@ -61,7 +61,12 @@ def main(vlan_list, username, password, target_devices_file, template_file):
 
         output = []
         for interface, vlan in interface_vlans.items():
-            if vlan != 'trunk' and (vlan in vlan_apply_list):
+            if(
+               vlan != 'trunk' and
+               vlan != 'routed' and
+               not interface.startswith('Po') and
+               vlan in vlan_apply_list
+            ):
                 output.append(template.render(interface_label=interface, vlan=vlan))
 
         config = '\n'.join(output)
