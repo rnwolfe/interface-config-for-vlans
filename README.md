@@ -112,7 +112,7 @@ Loading configuration template...
 **10.1.100.1.txt**
 ```
 interface Gi1/0/1
- ! Interface is in VLAN 92
+ ! Interface is in VLAN 100
  authentication open
  authentication event server dead action authorize
  authentication event servere alive action reinitialize
@@ -120,7 +120,7 @@ interface Gi1/0/1
  authentication port-control auto
  ! Example config
 interface Gi1/0/6
- ! Interface is in VLAN 92
+ ! Interface is in VLAN 100
  authentication open
  authentication event server dead action authorize
  authentication event servere alive action reinitialize
@@ -129,7 +129,7 @@ interface Gi1/0/6
 <...>
  ! Example config
 interface Gi1/0/8
- ! Interface is in VLAN 92
+ ! Interface is in VLAN 100
  authentication open
  authentication event server dead action authorize
  authentication event servere alive action reinitialize
@@ -157,7 +157,7 @@ Loading configuration template...
 ```
 # show run int gi1/0/5
 interface Gi1/0/1interface GigabitEthernet1/0/5
- description FTD Mgt - pushed from script example2
+ description FTD Mgt - pushed from script example
  switchport access vlan 100
  switchport mode access
 !
