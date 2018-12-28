@@ -84,6 +84,7 @@ def generate_and_write_config(vlan_list, username, password, target_devices_file
                 print(f'{pretty_hostname}: Writing config to {device}.txt...')
                 if write_config_to_file(config, device):
                     print(f'{color.GREEN}{pretty_hostname}: Done!')
+                    print(f'{color.YELLOW}{pretty_hostname}: Please review configs and run script again with -c flag to push configs to devices!')
                 else:
                     print(f'{color.RED}{pretty_hostname}: Problem writing to file {device}.txt!')
         else:
