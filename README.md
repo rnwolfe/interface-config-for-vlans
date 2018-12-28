@@ -91,7 +91,7 @@ By default, the script will try `inputs/target_devices`. You can simply modify t
 10.3.100.1
 ```
 
-## Example Output
+## Recommended Usage
 ### Staging Configs to File
 **generate_interface_config.py**
 ```
@@ -108,6 +108,7 @@ Loading configuration template...
 10.1.100.1: Please review configs and run script again with -c flag to push configs to devices!
 ```
 
+### Review Staged Configurations
 **10.1.100.1.txt**
 ```
 interface Gi1/0/1
@@ -137,7 +138,7 @@ interface Gi1/0/8
  ! Example config
 <output breviated>
  ```
-### Committing Configs to Device
+### Commit Configs to Device
 **generate_interface_config.py**
 ```
 $ python generate_interface_config.py -c
