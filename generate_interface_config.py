@@ -5,6 +5,7 @@ import jinja2
 import argparse
 
 import napalm
+from netmiko import ConnectHandler
 
 # For pretty terminal output
 class color:
@@ -20,13 +21,20 @@ class color:
    END = '\033[0m'
 
 # main
-def main(vlan_list, username, password, target_devices_file, template_file):
+def generate_and_write_config(vlan_list, username, password, target_devices_file, template_file, commit=False):
     """Script to generate an interface configuration for any interfaces
     on a device that are a member of a specified list of VLANs. """
 
     # Open target_devices file
     fh = open(target_devices_file, 'r')
     devices = [device.strip() for device in fh.readlines()]
+
+    # Get credentials for devices, if not provided:
+    if not username:
+        username = input("Enter username for devices: ")
+    if not password:
+        password = getpass.getpass(prompt="Enter password for devices: ")
+
 
     # Get target VLANs, if not provided
     if not vlan_list:
@@ -42,12 +50,6 @@ def main(vlan_list, username, password, target_devices_file, template_file):
     env = jinja2.Environment(loader=loader)
     template = env.get_template(template_file)
 
-    # Get credentials for devices, if not provided:
-    if not username:
-        username = input("Enter username for devices: ")
-    if not password:
-        password = getpass.getpass(prompt="Enter password for devices: ")
-
     for device in devices:
         # Prints to terminal in bold, easier readability
         pretty_hostname = color.BOLD + device + color.END
@@ -56,47 +58,94 @@ def main(vlan_list, username, password, target_devices_file, template_file):
         print(f'{pretty_hostname}: Getting interface VLANs...')
         interface_vlans = get_device_interface_vlans(device, username, password)
 
-        # Generate configuration to apply
-        print(f'{pretty_hostname}: Generating config from template for interfaces in target VLANs...')
+        if interface_vlans:
+            # Generate configuration to apply
+            print(f'{pretty_hostname}: Generating config from template for interfaces in target VLANs...')
 
-        output = []
-        for interface, vlan in interface_vlans.items():
-            if(
-               vlan != 'trunk' and
-               vlan != 'routed' and
-               not interface.startswith('Po') and
-               vlan in vlan_apply_list
-            ):
-                output.append(template.render(interface_label=interface, vlan=vlan))
+            for interface, vlan in interface_vlans.items():
+                if(
+                vlan != 'trunk' and
+                vlan != 'routed' and
+                not interface.startswith('Po') and
+                vlan in vlan_apply_list
+                ):
+                    config = template.render(interface_label=interface, vlan=vlan)
 
-        config = '\n'.join(output)
+            if commit:
+                config_lines = config.split('\n')
+                print(f'{pretty_hostname}: Pushing config to {device}...')
 
-        # Write config to file
-        print(f'{pretty_hostname}: Writing config to {device}.txt...')
-        f = open(f"{device}.txt", "w")
-        f.write(config)
-        f.close()
-
-        print(f'{pretty_hostname}: Done!')
-
-    # Merging, commiting, etc. programmatically requires SCP server
-    # enabled and config archiving enabled on device
+                if push_config_to_device(device, username, password, config_lines):
+                    print(f'{color.GREEN}{pretty_hostname}: Config successfully committed to {device}!')
+                else:
+                    print(f'{color.RED}{pretty_hostname}: Config failed to push to {device}!')
+            else:
+                # Write config to file
+                print(f'{pretty_hostname}: Writing config to {device}.txt...')
+                if write_config_to_file(config, device):
+                    print(f'{color.GREEN}{pretty_hostname}: Done!')
+                else:
+                    print(f'{color.RED}{pretty_hostname}: Problem writing to file {device}.txt!')
+        else:
+            print(f'{color.RED}{pretty_hostname}: Problem getting VLANs from interfaces on {device}!')
 
 def get_device_interface_vlans(hostname, username, password):
-    # Setup device for napalm
-    driver = napalm.get_network_driver('ios')
-    device = driver(hostname=hostname, username=username, password=password)
+    try:
+        # Setup device for napalm
+        driver = napalm.get_network_driver('ios')
+        device = driver(hostname=hostname, username=username, password=password)
 
-    # Open device
-    device.open()
+        # Open device
+        device.open()
 
-    # Get VLANs
-    interface_vlans = device.get_interface_vlans()
+        # Get VLANs
+        interface_vlans = device.get_interface_vlans()
 
-    # Close the device
-    device.close()
+        # Close the device
+        device.close()
 
-    return interface_vlans
+        return interface_vlans
+    except:
+        return False
+
+def push_config_to_device(hostname, username, password, configs):
+    # Merging, committing, etc. programmatically via NAPALM requires SCP server
+    # enabled and config archiving enabled on device.
+    # Given that, we are using netmiko directly.
+
+    # Setup device and connect
+    device = {
+        'device_type': 'cisco_ios',
+        'ip':   hostname,
+        'username': username,
+        'password': password,
+        'port' : 22,          # optional, defaults to 22
+        'verbose': False,       # optional, defaults to False
+    }
+    conn = ConnectHandler(**device)
+
+    # Ensure provided configs are in a list format, as needed by send_config_set()
+    if type(configs) is not list:
+        configs = configs.split('\n')
+
+    try:
+        output = conn.send_config_set(configs)
+        conn.save_config()
+        return output
+    except Exception as e:
+        print(e)
+        return False
+
+def write_config_to_file(config, filename):
+    # config should be a string format
+    try:
+        f = open(f"{filename}.txt", "w")
+        f.write(config)
+        return True
+    except:
+        return False
+    finally:
+        f.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate configuration templates per interface in specified VLANs.', formatter_class=argparse.RawTextHelpFormatter)
@@ -105,7 +154,10 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--password', type=str, help='password to login with (applies to all devices).\nFor non-interactive use. Will be prompted if not specified.')
     parser.add_argument('-d', '--devices', type=str, default='inputs/target_devices', help='target device list (file)\ndefault: inputs/target_devices')
     parser.add_argument('-t', '--template', type=str, default='inputs/template.j2', help='template to generate configs (file)\ndefault: inputs/template.j2')
+    parser.add_argument('-s', '--stage', default=True, action="store_true", help='stage configs to file only\ndefault mode')
+    parser.add_argument('-c', '--commit', action="store_true", help='auto commit/push the generated configs to the target devices\nwill overwrite stage flag if set\n')
     args = parser.parse_args()
 
-    main(vlan_list=args.vlans, username=args.username, password=args.password, target_devices_file=args.devices, template_file=args.template)
+    generate_and_write_config(vlan_list=args.vlans, username=args.username, password=args.password, target_devices_file=args.devices, template_file=args.template, commit=args.commit)
+
 
