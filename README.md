@@ -10,7 +10,9 @@ See [getting started for details](#getting-started).
 # Usage
 To run the script interactively, use `python generate_interface_config.py`. By default, it will only stage the config changes to a text file in the same directory.
 
-If you wish to commit these changes to the devices automatically, run `python generate_interface_config.py -c`. **It is highly recommended that you run the command using the staging option (default) before pushing to devices with `-c`. Use at your own risk.** The `-c` flag will overwrite the staging option if used in conjunction with `-s`.
+If you wish to commit these changes to the devices automatically, run `python generate_interface_config.py -c`. The `-c` flag will overwrite the staging option if used in conjunction with `-s`.
+
+### It is highly recommended that you run the command using the staging option (default) before pushing to devices with `-c`. Use at your own risk.
 
 Can be run unattended by provide `-v`, `-u`, and `-p` (and `-c` if wanting to commit to device). This will use default input files for `devices` and `template` file. For example:
 
@@ -53,7 +55,7 @@ optional arguments:
                         default mode
   -c, --commit          auto commit/push the generated configs to the target devices
                         will overwrite stage flag if set```
-
+```
 Output configuration files will be placed in the project root directory using the `[device].txt` naming format.
 
 # Getting started
@@ -72,7 +74,7 @@ pip install -r requirements.txt
 ## Specify the template
 Specify a template file. The file format should be Jinja2.
 
-By default, the scriptp will try to load `inputs/template.js`.
+By default, the script will try to load `inputs/template.js`.
 
 The available variables are `{{ interface_label }}` and `{{ vlan }}`.
 
