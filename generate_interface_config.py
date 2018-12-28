@@ -159,5 +159,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     generate_and_write_config(vlan_list=args.vlans, username=args.username, password=args.password, target_devices_file=args.devices, template_file=args.template, commit=args.commit)
-
-
