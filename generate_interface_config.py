@@ -62,6 +62,7 @@ def generate_and_write_config(vlan_list, username, password, target_devices_file
             # Generate configuration to apply
             print(f'{pretty_hostname}: Generating config from template for interfaces in target VLANs...')
 
+            output = []
             for interface, vlan in interface_vlans.items():
                 if(
                 vlan != 'trunk' and
@@ -69,8 +70,9 @@ def generate_and_write_config(vlan_list, username, password, target_devices_file
                 not interface.startswith('Po') and
                 vlan in vlan_apply_list
                 ):
-                    config = template.render(interface_label=interface, vlan=vlan)
+                    output.append(template.render(interface_label=interface, vlan=vlan))
 
+            config = '\n'.join(output)
             if commit:
                 config_lines = config.split('\n')
                 print(f'{pretty_hostname}: Pushing config to {device}...')
@@ -82,6 +84,8 @@ def generate_and_write_config(vlan_list, username, password, target_devices_file
             else:
                 # Write config to file
                 print(f'{pretty_hostname}: Writing config to {device}.txt...')
+                print(config)
+
                 if write_config_to_file(config, device):
                     print(f'{color.GREEN}{pretty_hostname}: Done!')
                     print(f'{color.YELLOW}{pretty_hostname}: Please review configs and run script again with -c flag to push configs to devices!')
