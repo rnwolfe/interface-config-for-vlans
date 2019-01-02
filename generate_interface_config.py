@@ -72,19 +72,21 @@ def generate_and_write_config(vlan_list, username, password, target_devices_file
                 ):
                     output.append(template.render(interface_label=interface, vlan=vlan))
 
+            # output is a list and has extraneous line breaks at this point, this join fixes that.
+            # config is a text blob of the configs
+            # config_lines is a list - each item being one line of config
             config = '\n'.join(output)
+            config_lines = config.split('\n')
             if commit:
-                config_lines = config.split('\n')
                 print(f'{pretty_hostname}: Pushing config to {device}...')
 
-                if push_config_to_device(device, username, password, config_lines):
+                if push_config_to_device(device, username, password, config_lines, save=True, debug=False):
                     print(f'{color.GREEN}{pretty_hostname}: Config successfully committed to {device}!')
                 else:
                     print(f'{color.RED}{pretty_hostname}: Config failed to push to {device}!')
             else:
                 # Write config to file
                 print(f'{pretty_hostname}: Writing config to {device}.txt...')
-                print(config)
 
                 if write_config_to_file(config, device):
                     print(f'{color.GREEN}{pretty_hostname}: Done!')
@@ -113,7 +115,7 @@ def get_device_interface_vlans(hostname, username, password):
     except:
         return False
 
-def push_config_to_device(hostname, username, password, configs):
+def push_config_to_device(hostname, username, password, configs, save=True, debug=False):
     # Merging, committing, etc. programmatically via NAPALM requires SCP server
     # enabled and config archiving enabled on device.
     # Given that, we are using netmiko directly.
@@ -135,7 +137,10 @@ def push_config_to_device(hostname, username, password, configs):
 
     try:
         output = conn.send_config_set(configs)
-        conn.save_config()
+        if debug:
+            print(output)
+        if save:
+            conn.save_config()
         return output
     except Exception as e:
         print(e)
