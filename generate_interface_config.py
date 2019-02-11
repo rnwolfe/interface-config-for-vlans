@@ -68,6 +68,7 @@ def generate_and_write_config(vlan_list, username, password, target_devices_file
                 vlan != 'trunk' and
                 vlan != 'routed' and
                 not interface.startswith('Po') and
+                not interface.startswith('Te') and
                 vlan in vlan_apply_list
                 ):
                     output.append(template.render(interface_label=interface, vlan=vlan))
