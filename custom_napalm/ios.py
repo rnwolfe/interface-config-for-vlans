@@ -31,9 +31,9 @@ class CustomIOSDriver(IOSDriver):
             if interface_label == 'Port':
                 continue
 
-            pattern = r'[A-Za-z0-9\/]+\s+.*\s{2,}(trunk|routed|[0-9]{1,4})'
-            vlan = re.match(pattern, line)
+            pattern = r'([A-Za-z0-9\/]+)\s+.{1,29}\s+(trunk|routed|[0-9])'
+            match = re.match(pattern, line)
 
-            return_vlans[interface_label] = vlan.group(1)
+            return_vlans[interface_label] = match.group(2).strip()
 
         return return_vlans
