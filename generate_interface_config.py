@@ -55,6 +55,14 @@ def analyze_device(username, password, target_devices_file):
                         f"{color.RED}{pretty_hostname}: {device} appears to be anamolous!"
                     )
 
+            print(f'Following devices are anamolous:\n\n')
+            for device in anamolous:
+                print(f'\t\t{device}')
+
+            output = '\n'.join(anamolous)
+            if write_to_file(output, "anamolous_devices.txt"):
+                print(f'{color.GREEN} Done! Anamolous devices written to ./anamolous_devices.txt)
+
         else:
             print(
                 f"{color.RED}{pretty_hostname}: Problem getting VLANs from interfaces on {device}!"
